@@ -1,0 +1,51 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: reviewforge
+      POSTGRES_PASSWORD: reviewforge
+      POSTGRES_DB: reviewforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reviewforge -d reviewforge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://reviewforge:reviewforge@db:5432/reviewforge
+      SYNC_DATABASE_URL: postgresql://reviewforge:reviewforge@db:5432/reviewforge
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 25s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  backend_uploads:

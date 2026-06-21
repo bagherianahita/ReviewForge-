@@ -1,29 +1,8 @@
 # ReviewForge
 
-**AI-assisted virtual design review for mechanical engineering teams**
+## Run the prototype (≈2 minutes)
 
-ReviewForge is a full-stack portfolio application that demonstrates how engineering organizations can run virtual design reviews, automate first-pass geometry checks, and search institutional knowledge — patterns common in modern engineering collaboration platforms.
-
-[![CI](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml/badge.svg)](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.12-FastAPI-009688?style=flat-square)
-![Frontend](https://img.shields.io/badge/React-18-TypeScript-61DAFB?style=flat-square)
-![Database](https://img.shields.io/badge/Postgres-pgvector-336791?style=flat-square)
-![3D](https://img.shields.io/badge/3D-Trimesh%20%2B%20Three.js-orange?style=flat-square)
-
----
-
-## Try the demo (≈2 minutes)
-
-> **Best place for the demo instructions: this README.**  
-> Recruiters and hiring managers typically land here first on GitHub. Everything needed to run and evaluate the project is self-contained below — no separate docs required.
-
-### Prerequisites
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Docker Compose v2)
-- 4 GB free RAM recommended
-- *(Optional)* OpenAI API key for LLM peer-review summaries
-
-### Run
+**Requires:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) only — no API keys, no manual database setup.
 
 ```bash
 git clone https://github.com/bagherianahita/ReviewForge-.git
@@ -36,49 +15,63 @@ docker compose up --build
 ```powershell
 git clone https://github.com/bagherianahita/ReviewForge-.git
 cd ReviewForge-
-.\scripts\demo.ps1
-```
-
-Wait until all three services are healthy (~30–60 seconds on first build). Then open:
-
-| Service | URL |
-|---------|-----|
-| **Application** | http://localhost:5173 |
-| **API docs (Swagger)** | http://localhost:8001/docs |
-| **Health check** | http://localhost:8001/health |
-
-Demo data is **seeded automatically** on first startup — no manual setup step.
-
-### Optional: enable LLM insights
-
-```bash
-cp .env.example .env
-# Add your key to .env, then:
 docker compose up --build
 ```
 
-Without an API key, AutoReview still runs using deterministic geometry rules and a built-in fallback summary.
+Wait ~30–60 seconds on first build, then open:
 
-### Stop / reset
+| | URL |
+|---|-----|
+| **Web app (start here)** | http://localhost:5173 |
+| **API docs** | http://localhost:8001/docs |
+| **Health check** | http://localhost:8001/health |
+
+Demo data (3 designs, 4 lessons, sample AutoReview findings) is **seeded automatically** on first startup.
+
+**Quick tour:** Dashboard → click *Engine Mount Bracket* → see AutoReview findings → click *Run AutoReview* → post a comment → open *Lessons Learned* and search `welding bracket`.
 
 ```bash
-docker compose down          # stop containers
-docker compose down -v       # stop + wipe database (re-seeds on next start)
+docker compose down      # stop
+docker compose down -v   # stop + reset database
 ```
+
+---
+
+**AI-assisted virtual design review for mechanical engineering teams**
+
+ReviewForge is a full-stack portfolio application that demonstrates virtual design reviews, automated geometry checks (AutoReview), and semantic search over lessons learned.
+
+[![CI](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml/badge.svg)](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Postgres](https://img.shields.io/badge/Postgres-pgvector-336791?style=flat-square&logo=postgresql&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-R3F-F59E0B?style=flat-square)
+
+---
+
+## Optional: enable LLM insights
+
+```bash
+cp .env.example .env
+# Add OPENAI_API_KEY to .env, then:
+docker compose up --build
+```
+
+Without an API key, AutoReview uses deterministic geometry rules and a built-in fallback summary.
 
 ---
 
 ## Guided walkthrough for reviewers
 
-Use this 5-minute path to evaluate the full stack:
-
-1. **Dashboard** (`/`) — Three pre-seeded designs are listed. Create a new design to test the REST API round-trip.
-2. **Engine Mount Bracket** (`/designs/1`) — Open the seeded design. AutoReview findings are already populated (thin-wall geometry rule triggered on sample mesh).
-3. **Run AutoReview** — Click the button to re-run the geometry pipeline. Inspect rule IDs (`GEO-001`…`GEO-004`, `STD-101`…) in the sidebar.
-4. **3D viewer** — Issue markers render on the Three.js canvas. Click the canvas to add a human annotation (persisted via `/api/reviews/{id}/annotations`).
-5. **Review thread** — Post an SME comment; it is stored in PostgreSQL and returned on refresh.
-6. **Similar designs** — Vector similarity ranks other seeded designs by embedding cosine distance.
-7. **Lessons Learned** (`/lessons`) — Search `welding bracket clearance` to see semantic retrieval over institutional knowledge.
+1. **Dashboard** (`/`) — Three pre-seeded designs. Create a new design to test the REST API.
+2. **Engine Mount Bracket** (`/designs/1`) — AutoReview findings already populated (thin-wall rule on sample mesh).
+3. **Run AutoReview** — Re-run the geometry pipeline. Inspect rule IDs (`GEO-001`…`GEO-004`).
+4. **3D viewer** — Issue markers on the Three.js canvas. Click to add an annotation.
+5. **Review thread** — Post an SME comment (persisted in PostgreSQL).
+6. **Similar designs** — Vector similarity ranks other seeded designs.
+7. **Lessons Learned** (`/lessons`) — Search `welding bracket clearance` for semantic retrieval.
 
 ---
 
@@ -87,12 +80,12 @@ Use this 5-minute path to evaluate the full stack:
 | Capability | Implementation |
 |------------|----------------|
 | Scalable REST APIs | FastAPI, async SQLAlchemy 2, Pydantic v2 |
-| Typed full-stack contract | Shared request/response shapes (Python schemas ↔ TypeScript interfaces) |
-| 3D geometry analysis | Trimesh pipeline: watertightness, thin features, degenerate faces |
-| Hybrid AI review | Deterministic rule engine + optional OpenAI LLM layer with graceful fallback |
-| Vector / semantic search | pgvector storage + cosine similarity for designs and lessons |
-| Interactive 3D UI | React Three Fiber viewer with severity-coded markers |
-| Production patterns | Docker Compose, health checks, CI, idempotent seeding, Nginx reverse proxy |
+| Typed full-stack contract | Python schemas ↔ TypeScript interfaces |
+| 3D geometry analysis | Trimesh: watertightness, thin features, degenerate faces |
+| Hybrid AI review | Rule engine + optional OpenAI with graceful fallback |
+| Vector / semantic search | pgvector + cosine similarity |
+| Interactive 3D UI | React Three Fiber with severity-coded markers |
+| Production patterns | Docker Compose, health checks, CI, idempotent seeding |
 
 ---
 
@@ -111,23 +104,7 @@ Use this 5-minute path to evaluate the full stack:
                                                              │
                                               ┌──────────────▼──────────────────┐
                                               │  PostgreSQL 16 + pgvector       │
-                                              │  designs · reviews · issues     │
-                                              │  annotations · lessons_learned  │
                                               └─────────────────────────────────┘
-```
-
-### Request flow (AutoReview example)
-
-```
-DesignReviewPage  →  api/client.ts  →  POST /api/designs/{id}/autoreview
-                                              ↓
-                                    review_service.run_autoreview()
-                                              ↓
-                         geometry.load_and_analyze()  +  ai_review (optional)
-                                              ↓
-                              Persist Issue rows + update design embedding
-                                              ↓
-                         AutoReviewResponse JSON  →  React state  →  ModelViewer markers
 ```
 
 ---
@@ -136,31 +113,10 @@ DesignReviewPage  →  api/client.ts  →  POST /api/designs/{id}/autoreview
 
 ```
 ReviewForge-/
-├── backend/
-│   ├── app/
-│   │   ├── api/           # FastAPI routers (designs, reviews, lessons)
-│   │   ├── models/        # SQLAlchemy ORM models
-│   │   ├── services/      # Geometry, AI, embeddings, orchestration
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   ├── main.py
-│   │   └── schemas.py     # Pydantic DTOs
-│   ├── scripts/
-│   │   ├── seed.py        # Idempotent demo data + sample mesh
-│   │   └── wait_for_db.py
-│   ├── tests/
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── api/client.ts  # Typed HTTP client
-│   │   ├── pages/         # Dashboard, DesignReview, Lessons
-│   │   └── components/    # ModelViewer (R3F), Layout
-│   ├── Dockerfile
-│   └── nginx.conf         # Proxies /api → backend
-├── .github/workflows/ci.yml
+├── backend/          # FastAPI, Trimesh geometry, OpenAI integration
+├── frontend/         # React + Three.js viewer
 ├── docker-compose.yml
-└── scripts/demo.ps1       # One-command demo helpers
+└── scripts/demo.ps1  # Windows helper (same as docker compose up --build)
 ```
 
 ---
@@ -197,7 +153,7 @@ python -m venv .venv
 # macOS/Linux:  source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Start Postgres with pgvector (or: docker compose up db)
+docker compose up db -d   # Postgres with pgvector
 uvicorn app.main:app --reload
 python scripts/seed.py
 ```
@@ -208,34 +164,26 @@ python scripts/seed.py
 cd frontend
 npm ci
 cp .env.example .env
-npm run dev
+npm run dev   # http://localhost:5173 — proxies /api → localhost:8000
 ```
-
-Vite dev server proxies `/api` to `localhost:8000` (see `vite.config.ts`).
 
 ---
 
 ## Testing
 
 ```bash
-# Backend (requires Postgres)
 cd backend && pytest
-
-# Frontend type-check + production build
 cd frontend && npm run build
 ```
-
-CI runs both on every push to `main` / `master`.
 
 ---
 
 ## Design decisions
 
-- **Hybrid AI** — Hard geometry failures are caught by deterministic rules; the LLM adds contextual narrative only when configured. The demo never depends on paid API access.
-- **Pluggable rule IDs** — Issues use stable identifiers (`GEO-001`, `STD-101`) so org-specific standards can be added without schema changes.
-- **Idempotent seeding** — `scripts/seed.py` runs on container start; safe to re-run, skips if data exists.
-- **Embeddings** — Demo uses lightweight hash-based vectors (no external API). Schema is pgvector-ready for production embedding models.
-- **Security** — `.env`, uploads, IDE tooling, and local scratch files are gitignored. Never commit API keys or user-uploaded meshes.
+- **Hybrid AI** — Deterministic rules catch hard failures; LLM adds narrative when configured.
+- **Pluggable rule IDs** — `GEO-001`, `STD-101`, etc. — extendable for org standards.
+- **Idempotent seeding** — Runs on container start; safe to re-run.
+- **Security** — `.env`, uploads, and IDE tooling are gitignored.
 
 ---
 
@@ -243,11 +191,9 @@ CI runs both on every push to `main` / `master`.
 
 | Layer | Technologies |
 |-------|-------------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2, asyncpg, Pydantic Settings |
-| Geometry | Trimesh, NumPy |
-| AI | OpenAI SDK (optional), rule-engine fallback |
+| Backend | Python 3.12, FastAPI, SQLAlchemy 2, asyncpg, Trimesh |
 | Database | PostgreSQL 16, pgvector |
-| Frontend | React 18, TypeScript, Vite 6, React Router, React Three Fiber |
+| Frontend | React 18, TypeScript, Vite, React Three Fiber |
 | Infra | Docker Compose, Nginx, GitHub Actions |
 
 ---
@@ -255,7 +201,3 @@ CI runs both on every push to `main` / `master`.
 ## License
 
 MIT — see [LICENSE](LICENSE).
-
----
-
-**Questions?** Open an issue or reach out via the contact on my GitHub profile.

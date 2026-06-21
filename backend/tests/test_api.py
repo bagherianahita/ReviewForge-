@@ -3,11 +3,12 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 
+TRANSPORT = ASGITransport(app=app, lifespan="on")
+
 
 @pytest.mark.asyncio
 async def test_health_check():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(transport=TRANSPORT, base_url="http://test") as client:
         response = await client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
@@ -15,8 +16,7 @@ async def test_health_check():
 
 @pytest.mark.asyncio
 async def test_create_design_and_autoreview():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(transport=TRANSPORT, base_url="http://test") as client:
         create = await client.post("/api/designs", json={"name": "Test Bracket", "description": "welding mount"})
         assert create.status_code == 201
         design_id = create.json()["id"]

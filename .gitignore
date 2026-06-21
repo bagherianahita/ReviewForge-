@@ -73,6 +73,9 @@ docker-compose.local.yml
 # --- Personal / scratch files ---
 *.docx
 *.doc
+~$*
+~WRL*.tmp
+*.tmp
 notes.txt
 scratch/
 

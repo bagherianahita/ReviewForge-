@@ -4,19 +4,6 @@
 
 **Requires:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) only — no API keys, no manual database setup.
 
-```bash
-git clone https://github.com/bagherianahita/ReviewForge-.git
-cd ReviewForge-
-docker compose up --build
-```
-
-**Windows (PowerShell):**
-
-```powershell
-git clone https://github.com/bagherianahita/ReviewForge-.git
-cd ReviewForge-
-docker compose up --build
-```
 
 Wait ~30–60 seconds on first build, then open:
 

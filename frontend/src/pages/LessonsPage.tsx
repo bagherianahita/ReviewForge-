@@ -1,17 +1,24 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, type LessonLearned } from '../api/client';
 
+const DEFAULT_QUERY = 'welding bracket clearance';
+
 export function LessonsPage() {
   const [lessons, setLessons] = useState<LessonLearned[]>([]);
-  const [query, setQuery] = useState('welding bracket clearance');
+  const [query, setQuery] = useState(DEFAULT_QUERY);
   const [results, setResults] = useState<LessonLearned[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void api.listLessons().then((data) => {
-      setLessons(data);
+    void (async () => {
+      const [allLessons, searchResults] = await Promise.all([
+        api.listLessons(),
+        api.searchLessons(DEFAULT_QUERY),
+      ]);
+      setLessons(allLessons);
+      setResults(searchResults);
       setLoading(false);
-    });
+    })();
   }, []);
 
   const handleSearch = async (event: FormEvent) => {
@@ -25,7 +32,10 @@ export function LessonsPage() {
         <div>
           <p className="eyebrow">Knowledge Repository</p>
           <h1>Lessons Learned Search</h1>
-          <p>Semantic search over past design feedback — the same pattern CoLab uses to surface insights from prior reviews.</p>
+          <p>
+            Four institutional lessons are pre-loaded. A sample search runs automatically so you can
+            see semantic retrieval on first visit.
+          </p>
         </div>
       </section>
 

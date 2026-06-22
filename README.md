@@ -26,7 +26,13 @@ Wait ~30–60 seconds on first build, then open:
 | **API docs** | http://localhost:8001/docs |
 | **Health check** | http://localhost:8001/health |
 
-Demo data (3 designs, 4 lessons, sample AutoReview findings) is **seeded automatically** on first startup.
+Demo data (3 STL meshes, 4 lessons, AutoReview findings, SME comments) is **seeded automatically** on first startup.
+
+| Sample design | STL file | What you'll see |
+|---------------|----------|-----------------|
+| Engine Mount Bracket | `engine_mount_bracket.stl` | Thin-wall finding + weld-access comments |
+| Radiator Housing Assembly | `radiator_housing.stl` | Thermal housing review + FEA note |
+| Hydraulic Pipe Manifold | `hydraulic_manifold.stl` | Routing geometry + hydraulics comments |
 
 **Quick tour:** Dashboard → click *Engine Mount Bracket* → see AutoReview findings → click *Run AutoReview* → post a comment → open *Lessons Learned* and search `welding bracket`.
 
@@ -41,13 +47,16 @@ docker compose down -v   # stop + reset database
 
 ReviewForge is a full-stack portfolio application that demonstrates virtual design reviews, automated geometry checks (AutoReview), and semantic search over lessons learned.
 
+**Badges below** = build status (CI) and tech stack labels ([shields.io](https://shields.io)) — not part of the app itself.
+
 [![CI](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml/badge.svg)](https://github.com/bagherianahita/ReviewForge-/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square)
-![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![React 18](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Postgres](https://img.shields.io/badge/Postgres-pgvector-336791?style=flat-square&logo=postgresql&logoColor=white)
-![Three.js](https://img.shields.io/badge/Three.js-R3F-F59E0B?style=flat-square)
+![Postgres](https://img.shields.io/badge/Postgres-16-336791?style=flat-square&logo=postgresql&logoColor=white)
+![pgvector](https://img.shields.io/badge/pgvector-enabled-4169E1?style=flat-square)
+![Three.js](https://img.shields.io/badge/Three.js-STL_viewer-F59E0B?style=flat-square)
 
 ---
 
@@ -130,6 +139,7 @@ ReviewForge-/
 | `POST` | `/api/designs` | Create design |
 | `POST` | `/api/designs/{id}/upload` | Upload STL / OBJ / PLY / GLB |
 | `POST` | `/api/designs/{id}/autoreview` | Run geometry + AI review |
+| `GET` | `/api/designs/{id}/mesh` | Download attached STL/OBJ mesh |
 | `GET` | `/api/designs/{id}/issues` | List detected issues |
 | `GET` | `/api/designs/{id}/similar` | Similar designs (vector search) |
 | `POST` | `/api/reviews` | Start review session |

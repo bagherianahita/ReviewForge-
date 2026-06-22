@@ -99,6 +99,7 @@ export const api = {
   createDesign: (payload: { name: string; description?: string }) =>
     request<Design>('/designs', { method: 'POST', body: JSON.stringify(payload) }),
   getDesign: (id: number) => request<Design>(`/designs/${id}`),
+  getMeshUrl: (id: number) => `${API_BASE}/designs/${id}/mesh`,
   uploadFile: async (id: number, file: File) => {
     const form = new FormData();
     form.append('file', file);

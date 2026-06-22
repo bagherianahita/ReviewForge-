@@ -1,8 +1,11 @@
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Html } from '@react-three/drei';
+import { Bounds, Center, Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { Canvas, useLoader } from '@react-three/fiber';
+import { Suspense } from 'react';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import type { Annotation, Issue, IssueSeverity } from '../api/client';
 
 interface ModelViewerProps {
+  meshUrl?: string | null;
   issues: Issue[];
   annotations: Annotation[];
   onCanvasClick?: (point: { x: number; y: number; z: number }) => void;
@@ -14,24 +17,68 @@ const severityColor: Record<IssueSeverity, string> = {
   critical: '#ef4444',
 };
 
-function DemoAssembly({ issues, annotations }: { issues: Issue[]; annotations: Annotation[] }) {
+function Markers({ issues, annotations }: { issues: Issue[]; annotations: Annotation[] }) {
   const markers = [
-    ...issues.filter((i) => i.position).map((i) => ({
-      x: i.position!.x,
-      y: i.position!.y,
-      z: i.position!.z,
-      label: i.title,
-      severity: i.severity,
-    })),
-    ...annotations.map((a) => ({
-      x: a.position_x,
-      y: a.position_y,
-      z: a.position_z,
-      label: a.label,
-      severity: a.severity,
+    ...issues
+      .filter((issue) => issue.position)
+      .map((issue) => ({
+        x: issue.position!.x,
+        y: issue.position!.y,
+        z: issue.position!.z,
+        label: issue.title,
+        severity: issue.severity,
+      })),
+    ...annotations.map((annotation) => ({
+      x: annotation.position_x,
+      y: annotation.position_y,
+      z: annotation.position_z,
+      label: annotation.label,
+      severity: annotation.severity,
     })),
   ];
 
+  return (
+    <>
+      {markers.map((marker, index) => (
+        <mesh key={`${marker.label}-${index}`} position={[marker.x, marker.y, marker.z]}>
+          <sphereGeometry args={[2.5, 16, 16]} />
+          <meshStandardMaterial
+            color={severityColor[marker.severity]}
+            emissive={severityColor[marker.severity]}
+            emissiveIntensity={0.45}
+          />
+          <Html distanceFactor={40} center>
+            <div className="marker-label">{marker.label}</div>
+          </Html>
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+function LoadedStl({
+  url,
+  issues,
+  annotations,
+}: {
+  url: string;
+  issues: Issue[];
+  annotations: Annotation[];
+}) {
+  const geometry = useLoader(STLLoader, url);
+  geometry.computeVertexNormals();
+
+  return (
+    <Center>
+      <mesh geometry={geometry} castShadow receiveShadow>
+        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.38} />
+      </mesh>
+      <Markers issues={issues} annotations={annotations} />
+    </Center>
+  );
+}
+
+function PlaceholderAssembly({ issues, annotations }: { issues: Issue[]; annotations: Annotation[] }) {
   return (
     <group>
       <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
@@ -42,47 +89,40 @@ function DemoAssembly({ issues, annotations }: { issues: Issue[]; annotations: A
         <cylinderGeometry args={[0.55, 0.55, 0.6, 32]} />
         <meshStandardMaterial color="#94a3b8" metalness={0.6} roughness={0.35} />
       </mesh>
-      <mesh castShadow position={[-1.1, 0.15, 0.4]}>
-        <boxGeometry args={[0.35, 0.35, 0.35]} />
-        <meshStandardMaterial color="#475569" />
-      </mesh>
-      <mesh castShadow position={[1.1, 0.15, -0.4]}>
-        <boxGeometry args={[0.35, 0.35, 0.35]} />
-        <meshStandardMaterial color="#475569" />
-      </mesh>
-
-      {markers.map((marker, idx) => (
-        <mesh key={idx} position={[marker.x, marker.y, marker.z]}>
-          <sphereGeometry args={[0.08, 16, 16]} />
-          <meshStandardMaterial color={severityColor[marker.severity]} emissive={severityColor[marker.severity]} emissiveIntensity={0.4} />
-          <Html distanceFactor={8} center>
-            <div className="marker-label">{marker.label}</div>
-          </Html>
-        </mesh>
-      ))}
+      <Markers issues={issues} annotations={annotations} />
     </group>
   );
 }
 
-export function ModelViewer({ issues, annotations, onCanvasClick }: ModelViewerProps) {
+export function ModelViewer({ meshUrl, issues, annotations, onCanvasClick }: ModelViewerProps) {
   return (
     <div className="viewer-panel">
       <Canvas
         shadows
         onPointerMissed={(event) => {
           if (event.type === 'click' && onCanvasClick) {
-            onCanvasClick({ x: (Math.random() - 0.5) * 2, y: Math.random(), z: (Math.random() - 0.5) * 2 });
+            onCanvasClick({ x: 0, y: 0, z: 0 });
           }
         }}
       >
-        <PerspectiveCamera makeDefault position={[4, 3, 4]} />
-        <ambientLight intensity={0.5} />
-        <directionalLight castShadow position={[5, 8, 3]} intensity={1.2} />
-        <DemoAssembly issues={issues} annotations={annotations} />
+        <PerspectiveCamera makeDefault position={[180, 120, 180]} />
+        <ambientLight intensity={0.55} />
+        <directionalLight castShadow position={[200, 260, 140]} intensity={1.15} />
+        <Bounds fit clip observe margin={1.25}>
+          <Suspense fallback={null}>
+            {meshUrl ? (
+              <LoadedStl url={meshUrl} issues={issues} annotations={annotations} />
+            ) : (
+              <PlaceholderAssembly issues={issues} annotations={annotations} />
+            )}
+          </Suspense>
+        </Bounds>
         <OrbitControls makeDefault enableDamping />
-        <gridHelper args={[10, 10, '#334155', '#1e293b']} />
+        <gridHelper args={[300, 30, '#334155', '#1e293b']} />
       </Canvas>
-      <p className="viewer-hint">Drag to orbit · Scroll to zoom · Click to add annotation</p>
+      <p className="viewer-hint">
+        {meshUrl ? 'Sample STL loaded · drag to orbit · scroll to zoom' : 'Upload a mesh to view geometry'}
+      </p>
     </div>
   );
 }

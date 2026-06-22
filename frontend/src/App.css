@@ -343,6 +343,24 @@ button:disabled {
   color: #fca5a5;
 }
 
+.demo-callout {
+  border-left: 3px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.design-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.design-card-head h3 {
+  margin: 0;
+}
+
 @media (max-width: 960px) {
   .review-layout,
   .inline-form {

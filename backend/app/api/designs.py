@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
@@ -46,6 +47,27 @@ async def get_design(design_id: int, db: AsyncSession = Depends(get_db)) -> Desi
     if not design:
         raise HTTPException(status_code=404, detail="Design not found")
     return design
+
+
+@router.get("/{design_id}/mesh")
+async def get_design_mesh(design_id: int, db: AsyncSession = Depends(get_db)) -> FileResponse:
+    design = await db.get(Design, design_id)
+    if not design or not design.file_path:
+        raise HTTPException(status_code=404, detail="Mesh file not found")
+
+    path = Path(design.file_path)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Mesh file not found on disk")
+
+    media_types = {
+        "stl": "model/stl",
+        "obj": "model/obj",
+        "ply": "application/octet-stream",
+        "glb": "model/gltf-binary",
+        "gltf": "model/gltf+json",
+    }
+    media_type = media_types.get(design.file_type or "", "application/octet-stream")
+    return FileResponse(path, media_type=media_type, filename=path.name)
 
 
 @router.post("/{design_id}/upload", response_model=DesignResponse)

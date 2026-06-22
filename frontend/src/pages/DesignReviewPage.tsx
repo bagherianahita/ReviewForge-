@@ -149,6 +149,14 @@ export function DesignReviewPage() {
           <p className="eyebrow">Virtual Design Review</p>
           <h1>{design.name}</h1>
           <p>{design.description}</p>
+          {design.file_type && (
+            <p className="muted">
+              {design.file_type.toUpperCase()} mesh attached
+              {(design.metadata_json as { issue_count?: number } | null)?.issue_count
+                ? ` · ${(design.metadata_json as { issue_count: number }).issue_count} AutoReview findings`
+                : ''}
+            </p>
+          )}
         </div>
         <div className="action-row">
           <label className="file-button">
@@ -172,12 +180,19 @@ export function DesignReviewPage() {
       {error && <p className="error">{error}</p>}
 
       <div className="review-layout">
-        <ModelViewer issues={issues} annotations={annotations} onCanvasClick={(p) => void handleAnnotate(p)} />
+        <ModelViewer
+          meshUrl={design.file_type ? api.getMeshUrl(designId) : null}
+          issues={issues}
+          annotations={annotations}
+          onCanvasClick={(p) => void handleAnnotate(p)}
+        />
 
         <aside className="review-sidebar">
           <section className="sidebar-section">
             <h3>AutoReview Findings</h3>
-            {issues.length === 0 && <p className="muted">Run AutoReview to detect geometry and rule issues.</p>}
+            {issues.length === 0 && (
+              <p className="muted">No findings yet — click Run AutoReview to analyze this design.</p>
+            )}
             <ul className="issue-list">
               {issues.map((issue) => (
                 <li key={issue.id}>

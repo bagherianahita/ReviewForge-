@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type Design } from '../api/client';
 
+type DesignMeta = { issue_count?: number; autoreview_status?: string };
+
 export function DashboardPage() {
   const [designs, setDesigns] = useState<Design[]>([]);
   const [name, setName] = useState('');
@@ -12,6 +14,7 @@ export function DashboardPage() {
   const load = async () => {
     try {
       setDesigns(await api.listDesigns());
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load designs');
     } finally {
@@ -36,28 +39,35 @@ export function DashboardPage() {
     <div className="page">
       <section className="hero-banner">
         <div>
-          <p className="eyebrow">Portfolio Project · CoLab Stack</p>
+          <p className="eyebrow">Live Demo · 3 sample engineering designs included</p>
           <h1>Virtual design reviews with AI peer checking</h1>
           <p>
-            Upload 3D models, run AutoReview against geometry rules, collaborate with SMEs, and search
-            institutional knowledge — built with Python, React, Postgres, and LLM integration.
+            Open any design below to see a real STL mesh, AutoReview findings, SME comments, and 3D
+            annotations — no setup required.
           </p>
         </div>
         <div className="stat-grid">
           <div className="stat-card">
-            <span>Backend</span>
-            <strong>FastAPI + Postgres</strong>
+            <span>Sample designs</span>
+            <strong>3 STL meshes</strong>
           </div>
           <div className="stat-card">
-            <span>3D Pipeline</span>
-            <strong>Trimesh + Three.js</strong>
+            <span>AutoReview</span>
+            <strong>Pre-run on load</strong>
           </div>
           <div className="stat-card">
-            <span>AI Layer</span>
-            <strong>OpenAI + Vector Search</strong>
+            <span>Knowledge base</span>
+            <strong>4 lessons</strong>
           </div>
         </div>
       </section>
+
+      {!loading && designs.length > 0 && (
+        <section className="panel demo-callout">
+          <strong>Start here:</strong> click <em>Engine Mount Bracket</em> to explore a full review with
+          geometry findings, threaded comments, and a 3D viewer.
+        </section>
+      )}
 
       <section className="panel">
         <h2>New Design</h2>
@@ -79,17 +89,29 @@ export function DashboardPage() {
         </div>
         {error && <p className="error">{error}</p>}
         <div className="design-grid">
-          {designs.map((design) => (
-            <Link key={design.id} to={`/designs/${design.id}`} className="design-card">
-              <h3>{design.name}</h3>
-              <p>{design.description || 'No description'}</p>
-              <div className="design-meta">
-                <span>{design.file_type ? design.file_type.toUpperCase() : 'No file'}</span>
-                <span>{new Date(design.created_at).toLocaleDateString()}</span>
-              </div>
-            </Link>
-          ))}
-          {!loading && designs.length === 0 && <p className="muted">No designs yet. Create one above.</p>}
+          {designs.map((design) => {
+            const meta = design.metadata_json as DesignMeta | null;
+            return (
+              <Link key={design.id} to={`/designs/${design.id}`} className="design-card">
+                <div className="design-card-head">
+                  <h3>{design.name}</h3>
+                  {meta?.issue_count ? (
+                    <span className="badge warning">{meta.issue_count} findings</span>
+                  ) : (
+                    <span className="badge info">New</span>
+                  )}
+                </div>
+                <p>{design.description || 'No description'}</p>
+                <div className="design-meta">
+                  <span>{design.file_type ? `${design.file_type.toUpperCase()} mesh` : 'No file'}</span>
+                  <span>{meta?.autoreview_status === 'complete' ? 'AutoReview ✓' : 'Pending review'}</span>
+                </div>
+              </Link>
+            );
+          })}
+          {!loading && designs.length === 0 && (
+            <p className="muted">No designs yet. Run <code>docker compose up --build</code> to load demo data.</p>
+          )}
         </div>
       </section>
     </div>

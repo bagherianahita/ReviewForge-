@@ -93,9 +93,9 @@ Without an API key, AutoReview uses deterministic geometry rules and a built-in 
 │  Vite · Three.js     │   /api → Nginx proxy │  ├── api/        (route layer)  │
 │  localhost:5173      │                      │  ├── services/   (domain logic) │
 └──────────────────────┘                      │  │   ├── geometry.py  (trimesh) │
-                                              │  │   ├── ai_review.py (OpenAI)│
-                                              │  │   └── embeddings.py       │
-                                              │  └── models/     (SQLAlchemy)  │
+                                              │  │   ├── ai_review.py (OpenAI)  │
+                                              │  │   └── embeddings.py          │
+                                              │  └── models/     (SQLAlchemy)   │
                                               └──────────────┬──────────────────┘
                                                              │
                                               ┌──────────────▼──────────────────┐

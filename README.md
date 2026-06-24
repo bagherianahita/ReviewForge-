@@ -175,6 +175,8 @@ npm run dev   # http://localhost:5173 — proxies /api → localhost:8000
 cd backend && pytest
 cd frontend && npm run build
 ```
+<img width="1306" height="640" alt="image" src="https://github.com/user-attachments/assets/116ffc74-f5de-4129-a079-34bab6639570" />
+
 
 ---
 

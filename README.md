@@ -3,6 +3,7 @@
 ## Run the prototype (≈2 minutes)
 
 **Requires:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) only — no API keys, no manual database setup.
+<img width="1645" height="659" alt="image" src="https://github.com/user-attachments/assets/4a8e1f63-a114-4f9e-b539-83c61b986895" />
 
 
 Wait ~30–60 seconds on first build, then open:
@@ -214,3 +215,6 @@ Details: [docs/ROADMAP.md](docs/ROADMAP.md)
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+<img width="1447" height="921" alt="image" src="https://github.com/user-attachments/assets/7c604f86-dbee-452b-b2d3-13b43ef1de73" />
+

@@ -1,15 +1,29 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || `Request failed: ${response.status}`);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      signal: controller.signal,
+      ...options,
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || `Request failed: ${response.status}`);
+    }
+    return response.json() as Promise<T>;
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('API request timed out — is the backend running on port 8001?');
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeout);
   }
-  return response.json() as Promise<T>;
 }
 
 import type { DashboardSummary } from './dashboard';

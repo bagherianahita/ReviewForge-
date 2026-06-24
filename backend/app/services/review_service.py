@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.review import Design, Issue, IssueSeverity, LessonLearned
 from app.schemas import AutoReviewRequest
 from app.services.ai_review import generate_llm_insights
-from app.services.embeddings import cosine_similarity, embed_text
+from app.services.embeddings import cosine_similarity, embed_text, to_embedding_list
 from app.services.geometry import GeometryFinding, analyze_without_file, load_and_analyze
 
 
@@ -59,17 +59,18 @@ async def run_autoreview(
 
 
 async def find_similar_designs(db: AsyncSession, design: Design, limit: int = 5) -> list[tuple[Design, float]]:
-    if not design.embedding:
+    if design.embedding is None:
         design.embedding = embed_text(f"{design.name} {design.description or ''}")
         await db.commit()
 
+    design_vector = to_embedding_list(design.embedding)
     result = await db.execute(select(Design).where(Design.id != design.id))
     candidates = result.scalars().all()
     scored = []
     for candidate in candidates:
-        if not candidate.embedding:
+        if candidate.embedding is None:
             candidate.embedding = embed_text(f"{candidate.name} {candidate.description or ''}")
-        scored.append((candidate, cosine_similarity(design.embedding, candidate.embedding)))
+        scored.append((candidate, cosine_similarity(design_vector, to_embedding_list(candidate.embedding))))
 
     scored.sort(key=lambda item: item[1], reverse=True)
     return scored[:limit]
@@ -81,9 +82,9 @@ async def search_lessons(db: AsyncSession, query: str, limit: int = 5) -> list[t
     lessons = result.scalars().all()
     scored = []
     for lesson in lessons:
-        if not lesson.embedding:
+        if lesson.embedding is None:
             lesson.embedding = embed_text(f"{lesson.title} {lesson.content} {' '.join(lesson.tags or [])}")
-        scored.append((lesson, cosine_similarity(query_embedding, lesson.embedding)))
+        scored.append((lesson, cosine_similarity(query_embedding, to_embedding_list(lesson.embedding))))
 
     scored.sort(key=lambda item: item[1], reverse=True)
     return scored[:limit]

@@ -44,19 +44,29 @@ export function DesignReviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    if (!Number.isFinite(designId) || designId <= 0) {
+      setError('Invalid design id');
+      setPageLoading(false);
+      return;
+    }
+
     setPageLoading(true);
     setError(null);
     try {
-      const [designData, reviews, issueData, similarData] = await Promise.all([
+      const [designData, reviews, issueData] = await Promise.all([
         api.getDesign(designId),
         api.listReviews(),
         api.listIssues(designId),
-        api.similarDesigns(designId),
       ]);
 
       setDesign(designData);
       setIssues(issueData);
-      setSimilar(similarData);
+
+      try {
+        setSimilar(await api.similarDesigns(designId));
+      } catch {
+        setSimilar([]);
+      }
 
       const meta = designData.metadata_json as { geometry_summary?: Record<string, unknown> } | null;
       if (meta?.geometry_summary) {
@@ -85,7 +95,11 @@ export function DesignReviewPage() {
       }
 
       const lessonQuery = `${designData.name} ${designData.description ?? ''}`;
-      setRelatedLessons(await api.searchLessons(lessonQuery));
+      try {
+        setRelatedLessons(await api.searchLessons(lessonQuery));
+      } catch {
+        setRelatedLessons([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Cannot connect to API — run docker compose up --build');
       setDesign(null);

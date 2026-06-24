@@ -33,7 +33,15 @@ def embed_text(text: str, dimensions: int | None = None) -> list[float]:
     return vector.tolist()
 
 
-def cosine_similarity(a: list[float], b: list[float]) -> float:
+def to_embedding_list(value: list[float] | np.ndarray | None) -> list[float]:
+    if value is None:
+        return []
+    if isinstance(value, np.ndarray):
+        return value.astype(np.float32).tolist()
+    return list(value)
+
+
+def cosine_similarity(a: list[float] | np.ndarray, b: list[float] | np.ndarray) -> float:
     va = np.array(a, dtype=np.float32)
     vb = np.array(b, dtype=np.float32)
     denom = np.linalg.norm(va) * np.linalg.norm(vb)

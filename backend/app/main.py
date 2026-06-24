@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
-from app.api import designs, lessons, reviews
+from app.api import dashboard, designs, lessons, reviews
 from app.config import settings
 from app.database import Base, SessionLocal, engine
 
@@ -35,6 +35,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(dashboard.router, prefix="/api")
 app.include_router(designs.router, prefix="/api")
 app.include_router(reviews.router, prefix="/api")
 app.include_router(lessons.router, prefix="/api")

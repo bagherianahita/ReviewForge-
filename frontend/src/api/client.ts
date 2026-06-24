@@ -14,6 +14,8 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+import type { DashboardSummary } from './dashboard';
+
 export type IssueSeverity = 'info' | 'warning' | 'critical';
 export type ReviewStatus = 'draft' | 'in_progress' | 'completed';
 
@@ -146,4 +148,5 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ query, limit: 8 }),
     }),
+  getDashboard: () => request<DashboardSummary>('/dashboard/summary'),
 };

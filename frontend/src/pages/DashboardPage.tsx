@@ -1,11 +1,18 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { api, type Design } from '../api/client';
-
-type DesignMeta = { issue_count?: number; autoreview_status?: string };
+import { api } from '../api/client';
+import type { DashboardSummary } from '../api/dashboard';
+import {
+  LessonCategoryChart,
+  ReviewStatusChart,
+  RuleChart,
+  SeverityChart,
+} from '../components/charts/ReviewCharts';
+import { ReviewPipelineDiagram } from '../components/ReviewPipelineDiagram';
+import { KpiTile, Panel, StatusPill } from '../components/ui';
 
 export function DashboardPage() {
-  const [designs, setDesigns] = useState<Design[]>([]);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(true);
@@ -13,10 +20,10 @@ export function DashboardPage() {
 
   const load = async () => {
     try {
-      setDesigns(await api.listDesigns());
+      setSummary(await api.getDashboard());
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load designs');
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard');
     } finally {
       setLoading(false);
     }
@@ -24,6 +31,8 @@ export function DashboardPage() {
 
   useEffect(() => {
     void load();
+    const interval = setInterval(() => void load(), 20000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleCreate = async (event: FormEvent) => {
@@ -35,42 +44,70 @@ export function DashboardPage() {
     await load();
   };
 
+  if (loading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" />
+        <p>Initializing design review platform…</p>
+      </div>
+    );
+  }
+
+  if (error || !summary) {
+    return (
+      <div className="error-state">
+        <h2>Platform Connection Error</h2>
+        <p>{error}</p>
+        <button type="button" onClick={() => void load()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const { kpis, designs, pipeline_health } = summary;
+  const healthLabel =
+    pipeline_health === 'alert' ? 'System Alert' : pipeline_health === 'degraded' ? 'Degraded' : 'Nominal';
+
   return (
     <div className="page">
-      <section className="hero-banner">
+      <div className="page-header">
         <div>
-          <p className="eyebrow">Live Demo · 3 sample engineering designs included</p>
-          <h1>Virtual design reviews with AI peer checking</h1>
-          <p>
-            Open any design below to see a real STL mesh, AutoReview findings, SME comments, and 3D
-            annotations — no setup required.
-          </p>
+          <h1>Operations Overview</h1>
+          <p>Virtual design review command center · AutoReview &amp; knowledge retrieval</p>
         </div>
-        <div className="stat-grid">
-          <div className="stat-card">
-            <span>Sample designs</span>
-            <strong>3 STL meshes</strong>
-          </div>
-          <div className="stat-card">
-            <span>AutoReview</span>
-            <strong>Pre-run on load</strong>
-          </div>
-          <div className="stat-card">
-            <span>Knowledge base</span>
-            <strong>4 lessons</strong>
-          </div>
-        </div>
-      </section>
+        <StatusPill status={pipeline_health} label={healthLabel} pulse={pipeline_health !== 'nominal'} />
+      </div>
 
-      {!loading && designs.length > 0 && (
-        <section className="panel demo-callout">
-          <strong>Start here:</strong> click <em>Engine Mount Bracket</em> to explore a full review with
-          geometry findings, threaded comments, and a 3D viewer.
-        </section>
-      )}
+      <div className="kpi-grid">
+        <KpiTile label="Design Library" value={kpis.total_designs} unit="designs" accent="neutral" />
+        <KpiTile label="STL Meshes" value={kpis.designs_with_mesh} unit="loaded" accent="nominal" />
+        <KpiTile
+          label="AutoReview Findings"
+          value={kpis.total_issues}
+          unit="issues"
+          accent={kpis.total_issues > 5 ? 'degraded' : 'neutral'}
+        />
+        <KpiTile label="AutoReview Complete" value={kpis.autoreview_complete} unit="designs" accent="nominal" />
+        <KpiTile label="Active Reviews" value={kpis.active_reviews} unit="sessions" accent="neutral" />
+        <KpiTile label="SME Comments" value={kpis.sme_comments} unit="posted" accent="neutral" />
+        <KpiTile label="3D Annotations" value={kpis.annotations} unit="markers" accent="neutral" />
+        <KpiTile label="Lessons Learned" value={kpis.total_lessons} unit="indexed" accent="nominal" />
+      </div>
 
-      <section className="panel">
-        <h2>New Design</h2>
+      <ReviewPipelineDiagram />
+
+      <div className="chart-grid-2">
+        <SeverityChart data={summary.severity_distribution} />
+        <RuleChart data={summary.rule_distribution} />
+      </div>
+
+      <div className="chart-grid-2">
+        <ReviewStatusChart data={summary.review_status} />
+        <LessonCategoryChart data={summary.lesson_categories} />
+      </div>
+
+      <Panel title="New Design" subtitle="Create a design record and upload STL for AutoReview">
         <form className="inline-form" onSubmit={(e) => void handleCreate(e)}>
           <input placeholder="Design name" value={name} onChange={(e) => setName(e.target.value)} required />
           <input
@@ -80,39 +117,48 @@ export function DashboardPage() {
           />
           <button type="submit">Create Design</button>
         </form>
-      </section>
+      </Panel>
 
-      <section className="panel">
-        <div className="panel-header">
-          <h2>Design Library</h2>
-          {loading && <span className="muted">Loading…</span>}
-        </div>
-        {error && <p className="error">{error}</p>}
+      <Panel title="Design Library" subtitle="Click a design to open 3D viewer, findings, and SME review thread">
         <div className="design-grid">
-          {designs.map((design) => {
-            const meta = design.metadata_json as DesignMeta | null;
-            return (
-              <Link key={design.id} to={`/designs/${design.id}`} className="design-card">
-                <div className="design-card-head">
-                  <h3>{design.name}</h3>
-                  {meta?.issue_count ? (
-                    <span className="badge warning">{meta.issue_count} findings</span>
-                  ) : (
-                    <span className="badge info">New</span>
+          {designs.map((design) => (
+            <Link key={design.id} to={`/designs/${design.id}`} className="design-card mes-design-card">
+              <div className="design-card-head">
+                <h3>{design.name}</h3>
+                {design.issue_count > 0 ? (
+                  <StatusPill
+                    status={design.critical_count > 0 ? 'critical' : 'warning'}
+                    label={`${design.issue_count} findings`}
+                  />
+                ) : (
+                  <StatusPill status="nominal" label="New" />
+                )}
+              </div>
+              <p>{design.description || 'No description'}</p>
+              <div className="design-meta">
+                <span className="mono">{design.file_type ? `${design.file_type.toUpperCase()} mesh` : 'No file'}</span>
+                <span>
+                  {design.autoreview_status === 'complete' ? 'AutoReview ✓' : 'Pending review'}
+                </span>
+              </div>
+              {(design.critical_count > 0 || design.warning_count > 0) && (
+                <div className="finding-bars">
+                  {design.critical_count > 0 && (
+                    <span className="finding-chip critical">{design.critical_count} critical</span>
+                  )}
+                  {design.warning_count > 0 && (
+                    <span className="finding-chip warning">{design.warning_count} warning</span>
                   )}
                 </div>
-                <p>{design.description || 'No description'}</p>
-                <div className="design-meta">
-                  <span>{design.file_type ? `${design.file_type.toUpperCase()} mesh` : 'No file'}</span>
-                  <span>{meta?.autoreview_status === 'complete' ? 'AutoReview ✓' : 'Pending review'}</span>
-                </div>
-              </Link>
-            );
-          })}
-          {!loading && designs.length === 0 && (
-            <p className="muted">No designs yet. Run <code>docker compose up --build</code> to load demo data.</p>
-          )}
+              )}
+            </Link>
+          ))}
         </div>
+      </Panel>
+
+      <section className="demo-callout mes-callout">
+        <strong>Demo tour:</strong> Open <em>Engine Mount Bracket</em> → view GEO-001/GEO-002 findings on the STL mesh →
+        post an SME comment → search <code>welding bracket</code> in Lessons Learned.
       </section>
     </div>
   );

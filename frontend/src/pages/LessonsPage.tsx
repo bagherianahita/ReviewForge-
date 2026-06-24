@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, type LessonLearned } from '../api/client';
+import { KpiTile, Panel, StatusPill } from '../components/ui';
 
 const DEFAULT_QUERY = 'welding bracket clearance';
 
@@ -28,19 +29,17 @@ export function LessonsPage() {
 
   return (
     <div className="page">
-      <section className="hero-banner compact">
+      <div className="page-header">
         <div>
           <p className="eyebrow">Knowledge Repository</p>
           <h1>Lessons Learned Search</h1>
-          <p>
-            Four institutional lessons are pre-loaded. A sample search runs automatically so you can
-            see semantic retrieval on first visit.
-          </p>
+          <p>Semantic retrieval via pgvector cosine similarity</p>
         </div>
-      </section>
+        <KpiTile label="Indexed Lessons" value={lessons.length} accent="nominal" />
+      </div>
 
-      <section className="panel">
-        <form className="inline-form" onSubmit={(e) => void handleSearch(e)}>
+      <Panel title="Semantic Search" subtitle="Query institutional knowledge — demo: welding bracket clearance">
+        <form className="inline-form search-form" onSubmit={(e) => void handleSearch(e)}>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -48,49 +47,49 @@ export function LessonsPage() {
           />
           <button type="submit">Search</button>
         </form>
-      </section>
+      </Panel>
+
+      {loading && <p className="muted">Loading knowledge base…</p>}
 
       {results.length > 0 && (
-        <section className="panel">
-          <h2>Search Results</h2>
+        <Panel title="Search Results" subtitle={`${results.length} matches ranked by cosine similarity`}>
           <div className="lesson-grid">
             {results.map((lesson) => (
-              <article key={lesson.id} className="lesson-card">
+              <article key={lesson.id} className="lesson-card mes-lesson-card">
                 <div className="lesson-head">
                   <h3>{lesson.title}</h3>
                   {lesson.similarity != null && (
-                    <span className="badge info">{(lesson.similarity * 100).toFixed(0)}% relevant</span>
+                    <StatusPill status="nominal" label={`${(lesson.similarity * 100).toFixed(0)}% match`} />
                   )}
                 </div>
-                <p className="muted">{lesson.category} · {lesson.source_design}</p>
+                <p className="lesson-category">{lesson.category}</p>
                 <p>{lesson.content}</p>
                 <div className="tag-row">
                   {(lesson.tags ?? []).map((tag) => (
-                    <span key={tag} className="tag">{tag}</span>
+                    <span key={tag} className="tag">
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </article>
             ))}
           </div>
-        </section>
+        </Panel>
       )}
 
-      <section className="panel">
-        <h2>All Lessons</h2>
-        {loading ? (
-          <p className="muted">Loading…</p>
-        ) : (
-          <div className="lesson-grid">
-            {lessons.map((lesson) => (
-              <article key={lesson.id} className="lesson-card">
+      <Panel title="All Lessons" subtitle="Pre-seeded institutional knowledge base">
+        <div className="lesson-grid">
+          {lessons.map((lesson) => (
+            <article key={lesson.id} className="lesson-card mes-lesson-card">
+              <div className="lesson-head">
                 <h3>{lesson.title}</h3>
-                <p className="muted">{lesson.category}</p>
-                <p>{lesson.content}</p>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
+                <span className="tag">{lesson.category}</span>
+              </div>
+              <p>{lesson.content}</p>
+            </article>
+          ))}
+        </div>
+      </Panel>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Bounds, Center, Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { Bounds, Center, Environment, Html, OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { Suspense } from 'react';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
@@ -12,9 +12,9 @@ interface ModelViewerProps {
 }
 
 const severityColor: Record<IssueSeverity, string> = {
-  info: '#3b82f6',
-  warning: '#f59e0b',
-  critical: '#ef4444',
+  info: '#22d3ee',
+  warning: '#fb923c',
+  critical: '#f43f5e',
 };
 
 function Markers({ issues, annotations }: { issues: Issue[]; annotations: Annotation[] }) {
@@ -40,17 +40,20 @@ function Markers({ issues, annotations }: { issues: Issue[]; annotations: Annota
   return (
     <>
       {markers.map((marker, index) => (
-        <mesh key={`${marker.label}-${index}`} position={[marker.x, marker.y, marker.z]}>
-          <sphereGeometry args={[2.5, 16, 16]} />
-          <meshStandardMaterial
-            color={severityColor[marker.severity]}
-            emissive={severityColor[marker.severity]}
-            emissiveIntensity={0.45}
-          />
-          <Html distanceFactor={40} center>
-            <div className="marker-label">{marker.label}</div>
+        <group key={`${marker.label}-${index}`} position={[marker.x, marker.y, marker.z]}>
+          <mesh>
+            <sphereGeometry args={[3, 20, 20]} />
+            <meshStandardMaterial
+              color={severityColor[marker.severity]}
+              emissive={severityColor[marker.severity]}
+              emissiveIntensity={0.7}
+            />
+          </mesh>
+          <pointLight color={severityColor[marker.severity]} intensity={0.8} distance={40} />
+          <Html distanceFactor={50} center>
+            <div className={`marker-label marker-${marker.severity}`}>{marker.label}</div>
           </Html>
-        </mesh>
+        </group>
       ))}
     </>
   );
@@ -71,7 +74,15 @@ function LoadedStl({
   return (
     <Center>
       <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color="#94a3b8" metalness={0.5} roughness={0.38} />
+        <meshPhysicalMaterial
+          color="#c4b5fd"
+          metalness={0.65}
+          roughness={0.25}
+          clearcoat={0.4}
+          clearcoatRoughness={0.2}
+          emissive="#4c1d95"
+          emissiveIntensity={0.08}
+        />
       </mesh>
       <Markers issues={issues} annotations={annotations} />
     </Center>
@@ -83,31 +94,28 @@ function PlaceholderAssembly({ issues, annotations }: { issues: Issue[]; annotat
     <group>
       <mesh castShadow receiveShadow position={[0, 0.4, 0]}>
         <boxGeometry args={[2.4, 0.8, 1.2]} />
-        <meshStandardMaterial color="#64748b" metalness={0.4} roughness={0.5} />
+        <meshPhysicalMaterial color="#06b6d4" metalness={0.5} roughness={0.3} />
       </mesh>
       <mesh castShadow position={[0, 1.1, 0]}>
         <cylinderGeometry args={[0.55, 0.55, 0.6, 32]} />
-        <meshStandardMaterial color="#94a3b8" metalness={0.6} roughness={0.35} />
+        <meshPhysicalMaterial color="#a855f7" metalness={0.6} roughness={0.25} />
       </mesh>
       <Markers issues={issues} annotations={annotations} />
     </group>
   );
 }
 
-export function ModelViewer({ meshUrl, issues, annotations, onCanvasClick }: ModelViewerProps) {
+export function ModelViewer({ meshUrl, issues, annotations }: ModelViewerProps) {
   return (
-    <div className="viewer-panel">
-      <Canvas
-        shadows
-        onPointerMissed={(event) => {
-          if (event.type === 'click' && onCanvasClick) {
-            onCanvasClick({ x: 0, y: 0, z: 0 });
-          }
-        }}
-      >
-        <PerspectiveCamera makeDefault position={[180, 120, 180]} />
-        <ambientLight intensity={0.55} />
-        <directionalLight castShadow position={[200, 260, 140]} intensity={1.15} />
+    <div className="viewer-panel viewer-panel-enhanced">
+      <Canvas shadows gl={{ antialias: true, alpha: true }}>
+        <color attach="background" args={['#0a0f1a']} />
+        <PerspectiveCamera makeDefault position={[180, 120, 180]} fov={45} />
+        <ambientLight intensity={0.4} />
+        <directionalLight castShadow position={[200, 260, 140]} intensity={1.4} color="#e0f2fe" />
+        <directionalLight position={[-120, 80, -100]} intensity={0.5} color="#c4b5fd" />
+        <spotLight position={[0, 300, 0]} angle={0.4} penumbra={0.5} intensity={0.6} color="#22d3ee" />
+        <Environment preset="city" />
         <Bounds fit clip observe margin={1.25}>
           <Suspense fallback={null}>
             {meshUrl ? (
@@ -117,11 +125,11 @@ export function ModelViewer({ meshUrl, issues, annotations, onCanvasClick }: Mod
             )}
           </Suspense>
         </Bounds>
-        <OrbitControls makeDefault enableDamping />
-        <gridHelper args={[300, 30, '#334155', '#1e293b']} />
+        <OrbitControls makeDefault enableDamping dampingFactor={0.08} />
+        <gridHelper args={[300, 30, '#6366f1', '#1e1b4b']} />
       </Canvas>
       <p className="viewer-hint">
-        {meshUrl ? 'Sample STL loaded · drag to orbit · scroll to zoom' : 'Upload a mesh to view geometry'}
+        {meshUrl ? 'STL mesh · drag orbit · scroll zoom · click to annotate' : 'Upload STL/OBJ via dropdown above'}
       </p>
     </div>
   );

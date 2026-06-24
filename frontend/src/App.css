@@ -398,9 +398,10 @@ button:disabled {
   border-radius: 0.5rem;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  background: linear-gradient(135deg, #a855f7, #22d3ee);
   font-weight: 700;
   font-size: 0.85rem;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
 }
 
 .sidebar-brand strong {
@@ -770,4 +771,221 @@ button:disabled {
 @media (max-width: 1024px) {
   .mes-sidebar { display: none; }
   .chart-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ─── Form fields (dropdowns) ───────────────────────────────────── */
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.search-form-grid {
+  grid-template-columns: 1fr 1fr auto;
+  align-items: end;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.field-label.compact {
+  min-width: 160px;
+}
+
+.field-select,
+.field-label input.field-select {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #141b2e, #0c1020);
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field-select:focus,
+.field-label input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+
+.template-preview {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px dashed rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.action-row-form {
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* ─── 3D Geometry chart ─────────────────────────────────────────── */
+
+.geo-3d-chart {
+  padding: 0.25rem 0;
+}
+
+.geo-3d-chart.empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.geo-3d-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.geo-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.geo-badge {
+  font-size: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.geo-badge.ok {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+}
+
+.geo-badge.warn {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.geo-3d-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.geo-bar-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 64px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.geo-bar-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.geo-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: #1a1f35;
+  overflow: hidden;
+  transform: perspective(200px) rotateX(8deg);
+}
+
+.geo-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s ease;
+}
+
+.geo-bar-value {
+  font-size: 0.65rem;
+  text-align: right;
+  color: var(--accent);
+}
+
+.geo-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.geo-metric {
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  background: rgba(34, 211, 238, 0.05);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+  text-align: center;
+}
+
+.geo-metric-label {
+  display: block;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.geo-metric-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #22d3ee;
+}
+
+/* ─── Enhanced 3D viewer ────────────────────────────────────────── */
+
+.viewer-panel-enhanced {
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  box-shadow: 0 0 40px rgba(34, 211, 238, 0.08), inset 0 0 60px rgba(168, 85, 247, 0.04);
+}
+
+.marker-label {
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.marker-label.marker-critical {
+  border-color: #f43f5e;
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.2);
+}
+
+.marker-label.marker-warning {
+  border-color: #fb923c;
+  color: #fed7aa;
+  background: rgba(251, 146, 60, 0.2);
+}
+
+.marker-label.marker-info {
+  border-color: #22d3ee;
+  color: #a5f3fc;
+  background: rgba(34, 211, 238, 0.15);
+}
+
+.sidebar-nav a.active {
+  color: #22d3ee;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.12), rgba(168, 85, 247, 0.08));
+  border-color: rgba(34, 211, 238, 0.25);
+}
+
+.kpi-tile {
+  background: linear-gradient(145deg, #12182b, #0c1020);
+}
+
+.mes-design-card:hover {
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.12);
 }

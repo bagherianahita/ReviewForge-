@@ -13,7 +13,14 @@ import {
 } from '../api/client';
 import { ModelViewer } from '../components/ModelViewer';
 import { SeverityBadge } from '../components/SeverityBadge';
-import { Panel, StatusPill } from '../components/ui';
+import { Panel } from '../components/ui';
+import { GeometryStatsFromReview } from '../components/GeometryStats3D';
+import {
+  AUTOREVIEW_OPTIONS,
+  COMMENT_TEMPLATES,
+  MESH_FILE_TYPES,
+  REVIEWER_ROLES,
+} from '../constants/formOptions';
 
 export function DesignReviewPage() {
   const { id } = useParams();
@@ -27,41 +34,68 @@ export function DesignReviewPage() {
   const [similar, setSimilar] = useState<SimilarDesign[]>([]);
   const [relatedLessons, setRelatedLessons] = useState<LessonLearned[]>([]);
   const [autoReview, setAutoReview] = useState<AutoReviewResult | null>(null);
-  const [author, setAuthor] = useState('You');
+  const [author, setAuthor] = useState<string>(REVIEWER_ROLES[5].value);
+  const [commentTemplate, setCommentTemplate] = useState<string>(COMMENT_TEMPLATES[0].value);
   const [commentBody, setCommentBody] = useState('');
+  const [autoReviewMode, setAutoReviewMode] = useState<string>(AUTOREVIEW_OPTIONS[0].value);
+  const [meshFormat, setMeshFormat] = useState<string>(MESH_FILE_TYPES[0].value);
+  const [pageLoading, setPageLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [designData, reviews, issueData, similarData] = await Promise.all([
-      api.getDesign(designId),
-      api.listReviews(),
-      api.listIssues(designId),
-      api.similarDesigns(designId),
-    ]);
-
-    setDesign(designData);
-    setIssues(issueData);
-    setSimilar(similarData);
-
-    const activeReview = reviews.find((r) => r.design_id === designId) ?? null;
-    setReview(activeReview);
-
-    if (activeReview) {
-      const [commentData, annotationData] = await Promise.all([
-        api.listComments(activeReview.id),
-        api.listAnnotations(activeReview.id),
+    setPageLoading(true);
+    setError(null);
+    try {
+      const [designData, reviews, issueData, similarData] = await Promise.all([
+        api.getDesign(designId),
+        api.listReviews(),
+        api.listIssues(designId),
+        api.similarDesigns(designId),
       ]);
-      setComments(commentData);
-      setAnnotations(annotationData);
-    }
 
-    const lessonQuery = `${designData.name} ${designData.description ?? ''}`;
-    setRelatedLessons(await api.searchLessons(lessonQuery));
+      setDesign(designData);
+      setIssues(issueData);
+      setSimilar(similarData);
+
+      const meta = designData.metadata_json as { geometry_summary?: Record<string, unknown> } | null;
+      if (meta?.geometry_summary) {
+        setAutoReview({
+          design_id: designId,
+          issues_found: issueData.length,
+          issues: issueData,
+          geometry_summary: meta.geometry_summary,
+          llm_insights: null,
+        });
+      }
+
+      const activeReview = reviews.find((r) => r.design_id === designId) ?? null;
+      setReview(activeReview);
+
+      if (activeReview) {
+        const [commentData, annotationData] = await Promise.all([
+          api.listComments(activeReview.id),
+          api.listAnnotations(activeReview.id),
+        ]);
+        setComments(commentData);
+        setAnnotations(annotationData);
+      } else {
+        setComments([]);
+        setAnnotations([]);
+      }
+
+      const lessonQuery = `${designData.name} ${designData.description ?? ''}`;
+      setRelatedLessons(await api.searchLessons(lessonQuery));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Cannot connect to API — run docker compose up --build');
+      setDesign(null);
+    } finally {
+      setPageLoading(false);
+    }
   }, [designId]);
 
   useEffect(() => {
-    void refresh().catch((err) => setError(err instanceof Error ? err.message : 'Load failed'));
+    void refresh();
   }, [refresh]);
 
   const ensureReview = async () => {
@@ -87,7 +121,7 @@ export function DesignReviewPage() {
   const handleAutoReview = async () => {
     setBusy(true);
     try {
-      const result = await api.runAutoReview(designId);
+      const result = await api.runAutoReview(designId, autoReviewMode === 'full');
       setAutoReview(result);
       setIssues(result.issues);
 
@@ -139,8 +173,25 @@ export function DesignReviewPage() {
     setAnnotations(await api.listAnnotations(activeReview.id));
   };
 
-  if (!design) {
-    return <div className="page"><p className="muted">Loading design…</p></div>;
+  if (pageLoading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" />
+        <p>Loading 3D design workspace…</p>
+      </div>
+    );
+  }
+
+  if (error || !design) {
+    return (
+      <div className="error-state">
+        <h2>Connection Error</h2>
+        <p>{error}</p>
+        <p className="muted">Start backend: <code>docker compose up --build</code></p>
+        <button type="button" className="btn-primary" onClick={() => void refresh()}>Retry</button>
+        <Link to="/" className="back-link">← Back to dashboard</Link>
+      </div>
+    );
   }
 
   return (
@@ -160,24 +211,34 @@ export function DesignReviewPage() {
             </p>
           )}
         </div>
-        <div className="action-row">
-          {issues.length > 0 && (
-            <StatusPill
-              status={issues.some((i) => i.severity === 'critical') ? 'critical' : 'warning'}
-              label={`${issues.length} findings`}
-            />
-          )}
+        <div className="action-row action-row-form">
+          <label className="field-label compact">
+            Mesh format
+            <select className="field-select" value={meshFormat} onChange={(e) => setMeshFormat(e.target.value)}>
+              {MESH_FILE_TYPES.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </label>
           <label className="file-button">
-            Upload STL/OBJ/GLB
+            Upload mesh
             <input
               type="file"
-              accept=".stl,.obj,.ply,.glb,.gltf"
+              accept={`.${meshFormat},.stl,.obj,.ply,.glb,.gltf`}
               hidden
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) void handleUpload(file);
               }}
             />
+          </label>
+          <label className="field-label compact">
+            AutoReview mode
+            <select className="field-select" value={autoReviewMode} onChange={(e) => setAutoReviewMode(e.target.value)}>
+              {AUTOREVIEW_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </label>
           <button type="button" className="btn-primary" disabled={busy} onClick={() => void handleAutoReview()}>
             {busy ? 'Running…' : 'Run AutoReview'}
@@ -196,6 +257,10 @@ export function DesignReviewPage() {
         />
 
         <aside className="review-sidebar">
+          <Panel title="3D Geometry Metrics" subtitle="Volume · bounds · face analysis">
+            <GeometryStatsFromReview autoReview={autoReview} />
+          </Panel>
+
           <Panel title="AutoReview Findings" subtitle="Trimesh rule engine · GEO-*">
             {issues.length === 0 && (
               <p className="muted">No findings yet — click Run AutoReview to analyze this design.</p>
@@ -230,11 +295,33 @@ export function DesignReviewPage() {
               ))}
             </ul>
             <form onSubmit={(e) => void handleComment(e)} className="comment-form">
-              <input value={author} onChange={(e) => setAuthor(e.target.value)} placeholder="Your name" />
+              <label className="field-label">
+                Reviewer role
+                <select className="field-select" value={author} onChange={(e) => setAuthor(e.target.value)}>
+                  {REVIEWER_ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="field-label">
+                Comment template
+                <select
+                  className="field-select"
+                  value={commentTemplate}
+                  onChange={(e) => {
+                    setCommentTemplate(e.target.value);
+                    if (e.target.value) setCommentBody(e.target.value);
+                  }}
+                >
+                  {COMMENT_TEMPLATES.map((t) => (
+                    <option key={t.label} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </label>
               <textarea
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="Add SME feedback…"
+                placeholder="SME feedback…"
                 rows={3}
               />
               <button type="submit" className="btn-primary" disabled={busy}>Post Comment</button>

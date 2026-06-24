@@ -10,13 +10,21 @@ import {
 } from '../components/charts/ReviewCharts';
 import { ReviewPipelineDiagram } from '../components/ReviewPipelineDiagram';
 import { KpiTile, Panel, StatusPill } from '../components/ui';
+import {
+  DESIGN_CATEGORIES,
+  DESIGN_TEMPLATES,
+  MESH_FILE_TYPES,
+} from '../constants/formOptions';
 
 export function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [templateIndex, setTemplateIndex] = useState(0);
+  const [category, setCategory] = useState<string>(DESIGN_CATEGORIES[0]);
+  const [meshType, setMeshType] = useState<string>(MESH_FILE_TYPES[0].value);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedTemplate = DESIGN_TEMPLATES[templateIndex];
 
   const load = async () => {
     try {
@@ -37,10 +45,10 @@ export function DashboardPage() {
 
   const handleCreate = async (event: FormEvent) => {
     event.preventDefault();
-    if (!name.trim()) return;
-    await api.createDesign({ name: name.trim(), description: description.trim() || undefined });
-    setName('');
-    setDescription('');
+    await api.createDesign({
+      name: selectedTemplate.name,
+      description: `[${category}] ${selectedTemplate.description} · mesh: ${meshType.toUpperCase()}`,
+    });
     await load();
   };
 
@@ -107,15 +115,41 @@ export function DashboardPage() {
         <LessonCategoryChart data={summary.lesson_categories} />
       </div>
 
-      <Panel title="New Design" subtitle="Create a design record and upload STL for AutoReview">
-        <form className="inline-form" onSubmit={(e) => void handleCreate(e)}>
-          <input placeholder="Design name" value={name} onChange={(e) => setName(e.target.value)} required />
-          <input
-            placeholder="Description (e.g. bracket with welding features)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <button type="submit">Create Design</button>
+      <Panel title="New Design" subtitle="Select template, category, and mesh type — all fields have defaults">
+        <form className="form-grid" onSubmit={(e) => void handleCreate(e)}>
+          <label className="field-label">
+            Design template
+            <select
+              className="field-select"
+              value={templateIndex}
+              onChange={(e) => setTemplateIndex(Number(e.target.value))}
+            >
+              {DESIGN_TEMPLATES.map((t, i) => (
+                <option key={t.name} value={i}>{t.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field-label">
+            Engineering category
+            <select className="field-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+              {DESIGN_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field-label">
+            Expected mesh format
+            <select className="field-select" value={meshType} onChange={(e) => setMeshType(e.target.value)}>
+              {MESH_FILE_TYPES.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </label>
+          <div className="template-preview">
+            <p className="mono"><strong>{selectedTemplate.name}</strong></p>
+            <p className="muted">{selectedTemplate.description}</p>
+          </div>
+          <button type="submit" className="btn-primary btn-block">Create Design</button>
         </form>
       </Panel>
 

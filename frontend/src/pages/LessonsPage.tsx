@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, type LessonLearned } from '../api/client';
 import { KpiTile, Panel, StatusPill } from '../components/ui';
+import { LESSON_SEARCH_PRESETS } from '../constants/formOptions';
 
-const DEFAULT_QUERY = 'welding bracket clearance';
+const DEFAULT_QUERY = LESSON_SEARCH_PRESETS[0].value;
 
 export function LessonsPage() {
   const [lessons, setLessons] = useState<LessonLearned[]>([]);
-  const [query, setQuery] = useState(DEFAULT_QUERY);
+  const [query, setQuery] = useState<string>(DEFAULT_QUERY);
   const [results, setResults] = useState<LessonLearned[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,14 +39,30 @@ export function LessonsPage() {
         <KpiTile label="Indexed Lessons" value={lessons.length} accent="nominal" />
       </div>
 
-      <Panel title="Semantic Search" subtitle="Query institutional knowledge — demo: welding bracket clearance">
-        <form className="inline-form search-form" onSubmit={(e) => void handleSearch(e)}>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search lessons (e.g. weld access, thin wall, pipe routing)"
-          />
-          <button type="submit">Search</button>
+      <Panel title="Semantic Search" subtitle="Select a preset query or customize — pgvector cosine similarity">
+        <form className="form-grid search-form-grid" onSubmit={(e) => void handleSearch(e)}>
+          <label className="field-label">
+            Search preset
+            <select
+              className="field-select"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            >
+              {LESSON_SEARCH_PRESETS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field-label">
+            Custom query
+            <input
+              className="field-select"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Or type custom search…"
+            />
+          </label>
+          <button type="submit" className="btn-primary">Search</button>
         </form>
       </Panel>
 

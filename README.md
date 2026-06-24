@@ -195,6 +195,20 @@ cd frontend && npm run build
 
 ---
 
+## Roadmap
+
+اگر بخواهم ادامه بدهم، **rule engine را configurable می‌کنم**، **RBAC اضافه می‌کنم**، و **embedding را به OpenAI یا مدل داخلی سازمان وصل می‌کنم**.
+
+| Priority | Enhancement |
+|----------|-------------|
+| Configurable rule engine | Tunable AutoReview rules (`GEO-*`, `STD-*`) via config/admin |
+| RBAC | Reviewer · SME · Admin roles |
+| Enterprise embeddings | OpenAI or on-prem model for lessons/similar-design search |
+
+Details: [docs/ROADMAP.md](docs/ROADMAP.md)
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

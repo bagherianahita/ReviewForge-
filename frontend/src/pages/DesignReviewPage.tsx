@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   api,
   type Annotation,
@@ -13,6 +13,7 @@ import {
 } from '../api/client';
 import { ModelViewer } from '../components/ModelViewer';
 import { SeverityBadge } from '../components/SeverityBadge';
+import { Panel, StatusPill } from '../components/ui';
 
 export function DesignReviewPage() {
   const { id } = useParams();
@@ -144,21 +145,28 @@ export function DesignReviewPage() {
 
   return (
     <div className="page review-page">
-      <header className="review-header">
+      <div className="page-header">
         <div>
-          <p className="eyebrow">Virtual Design Review</p>
+          <Link to="/" className="back-link">← Operations Overview</Link>
+          <p className="eyebrow">Virtual Design Review · React Three Fiber</p>
           <h1>{design.name}</h1>
           <p>{design.description}</p>
           {design.file_type && (
-            <p className="muted">
-              {design.file_type.toUpperCase()} mesh attached
+            <p className="muted mono">
+              {design.file_type.toUpperCase()} mesh
               {(design.metadata_json as { issue_count?: number } | null)?.issue_count
-                ? ` · ${(design.metadata_json as { issue_count: number }).issue_count} AutoReview findings`
+                ? ` · ${(design.metadata_json as { issue_count: number }).issue_count} findings`
                 : ''}
             </p>
           )}
         </div>
         <div className="action-row">
+          {issues.length > 0 && (
+            <StatusPill
+              status={issues.some((i) => i.severity === 'critical') ? 'critical' : 'warning'}
+              label={`${issues.length} findings`}
+            />
+          )}
           <label className="file-button">
             Upload STL/OBJ/GLB
             <input
@@ -171,11 +179,11 @@ export function DesignReviewPage() {
               }}
             />
           </label>
-          <button type="button" disabled={busy} onClick={() => void handleAutoReview()}>
+          <button type="button" className="btn-primary" disabled={busy} onClick={() => void handleAutoReview()}>
             {busy ? 'Running…' : 'Run AutoReview'}
           </button>
         </div>
-      </header>
+      </div>
 
       {error && <p className="error">{error}</p>}
 
@@ -188,8 +196,7 @@ export function DesignReviewPage() {
         />
 
         <aside className="review-sidebar">
-          <section className="sidebar-section">
-            <h3>AutoReview Findings</h3>
+          <Panel title="AutoReview Findings" subtitle="Trimesh rule engine · GEO-*">
             {issues.length === 0 && (
               <p className="muted">No findings yet — click Run AutoReview to analyze this design.</p>
             )}
@@ -197,7 +204,7 @@ export function DesignReviewPage() {
               {issues.map((issue) => (
                 <li key={issue.id}>
                   <div className="issue-head">
-                    <strong>{issue.rule_id}</strong>
+                    <strong className="mono">{issue.rule_id}</strong>
                     <SeverityBadge severity={issue.severity} />
                   </div>
                   <p>{issue.title}</p>
@@ -205,17 +212,15 @@ export function DesignReviewPage() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
 
           {autoReview?.llm_insights && (
-            <section className="sidebar-section insight-box">
-              <h3>AI Peer Summary</h3>
-              <pre>{autoReview.llm_insights}</pre>
-            </section>
+            <Panel title="AI Peer Summary" subtitle="Optional LLM narrative layer">
+              <pre className="insight-pre">{autoReview.llm_insights}</pre>
+            </Panel>
           )}
 
-          <section className="sidebar-section">
-            <h3>Review Thread</h3>
+          <Panel title="Review Thread" subtitle="SME comments · persisted in PostgreSQL">
             <ul className="comment-list">
               {comments.map((comment) => (
                 <li key={comment.id}>
@@ -232,23 +237,22 @@ export function DesignReviewPage() {
                 placeholder="Add SME feedback…"
                 rows={3}
               />
-              <button type="submit" disabled={busy}>Post Comment</button>
+              <button type="submit" className="btn-primary" disabled={busy}>Post Comment</button>
             </form>
-          </section>
+          </Panel>
 
-          <section className="sidebar-section">
-            <h3>Similar Designs</h3>
+          <Panel title="Similar Designs" subtitle="pgvector cosine similarity">
             <ul className="simple-list">
               {similar.map(({ design: match, similarity }) => (
                 <li key={match.id}>
-                  {match.name} <span className="muted">{(similarity * 100).toFixed(0)}% match</span>
+                  <Link to={`/designs/${match.id}`}>{match.name}</Link>
+                  <span className="muted mono"> {(similarity * 100).toFixed(0)}%</span>
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
 
-          <section className="sidebar-section">
-            <h3>Related Lessons Learned</h3>
+          <Panel title="Related Lessons" subtitle="Semantic retrieval">
             <ul className="simple-list">
               {relatedLessons.map((lesson) => (
                 <li key={lesson.id}>
@@ -257,7 +261,7 @@ export function DesignReviewPage() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
         </aside>
       </div>
     </div>

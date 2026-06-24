@@ -75,6 +75,8 @@ Without an API key, AutoReview uses deterministic geometry rules and a built-in 
 
 | Capability | Implementation |
 |------------|----------------|
+| **MES Command Center** | KPI tiles, Recharts analytics, AutoReview pipeline diagram |
+| Dashboard API | `GET /api/dashboard/summary` — aggregate metrics |
 | Scalable REST APIs | FastAPI, async SQLAlchemy 2, Pydantic v2 |
 | Typed full-stack contract | Python schemas ↔ TypeScript interfaces |
 | 3D geometry analysis | Trimesh: watertightness, thin features, degenerate faces |

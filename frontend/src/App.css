@@ -722,6 +722,51 @@ button:disabled {
   to { transform: rotate(360deg); }
 }
 
+.mes-panel .issue-list,
+.mes-panel .comment-list,
+.mes-panel .simple-list {
+  margin: 0;
+}
+
+.mes-panel .mes-panel-body {
+  padding-top: 0.75rem;
+}
+
+.back-link {
+  font-size: 0.75rem;
+  color: var(--accent);
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0891b2, #06b6d4) !important;
+}
+
+.insight-pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.review-sidebar .mes-panel {
+  margin-bottom: 0.75rem;
+}
+
+.review-sidebar .mes-panel-header {
+  padding: 0.75rem 1rem;
+}
+
+.review-sidebar .mes-panel-body {
+  padding: 0.75rem 1rem;
+}
+
 @media (max-width: 1024px) {
   .mes-sidebar { display: none; }
   .chart-grid-2 { grid-template-columns: 1fr; }

@@ -1,6 +1,6 @@
-# ReviewForge
+﻿# ReviewForge
 
-## Quick start (employers — Docker only, no API keys)
+## Quick start
 
 ```bash
 docker compose up --build
